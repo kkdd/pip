@@ -14,6 +14,7 @@ from pip.status_codes import NO_MATCHES_FOUND
 from pip._vendor import pkg_resources
 from pip._vendor.six.moves import xmlrpc_client
 
+import urlib2
 
 class SearchCommand(Command):
     """Search for PyPI packages whose name or summary contains <query>."""
