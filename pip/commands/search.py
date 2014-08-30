@@ -12,6 +12,23 @@ from pip.status_codes import NO_MATCHES_FOUND
 from pip._vendor import pkg_resources
 from distutils.version import StrictVersion, LooseVersion
 
+import urllib2
+
+def xmlrpclib_ServerProxy(index_url):
+    p = Urllib2Transport()
+    return xmlrpclib.ServerProxy(index_url, transport=p)
+
+class Urllib2Transport(xmlrpclib.Transport):
+    SCHEME = 'https'
+    def request(self, host, handler, request_body, verbose=0):
+        self.verbose = 0
+        scheme = self.SCHEME
+        url = '%(scheme)s://%(host)s%(handler)s' % locals()
+        req = urllib2.Request(url, data=request_body,
+                              headers={'Content-Type':'text/xml'})
+        fp = urllib2.urlopen(req)
+        return self.parse_response(fp)
+
 
 class SearchCommand(Command):
     """Search for PyPI packages whose name or summary contains <query>."""
@@ -50,7 +67,7 @@ class SearchCommand(Command):
         return NO_MATCHES_FOUND
 
     def search(self, query, index_url):
-        pypi = xmlrpclib.ServerProxy(index_url)
+        pypi = xmlrpclib_ServerProxy(index_url)
         hits = pypi.search({'name': query, 'summary': query}, 'or')
         return hits
 
