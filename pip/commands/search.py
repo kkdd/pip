@@ -61,7 +61,7 @@ class SearchCommand(Command):
         if sys.stdout.isatty():
             terminal_width = get_terminal_size()[0]
 
-        print_results(hits, terminal_width=terminal_width)
+        print_results(hits, query, terminal_width=terminal_width)
         if pypi_hits:
             return SUCCESS
         return NO_MATCHES_FOUND
@@ -102,7 +102,9 @@ def transform_hits(hits):
     return package_list
 
 
-def print_results(hits, name_column_width=25, terminal_width=None):
+def print_results(hits, query, name_column_width=25, terminal_width=None):
+    def in_case_insensitive(x, list):
+        return x.lower() in [y.lower() for y in list]
     installed_packages = [p.project_name for p in pkg_resources.working_set]
     for hit in hits:
         name = hit['name']
@@ -114,7 +116,7 @@ def print_results(hits, name_column_width=25, terminal_width=None):
         line = '%s - %s' % (name.ljust(name_column_width), summary)
         try:
             logger.notify(line)
-            if name in installed_packages:
+            if in_case_insensitive(name, installed_packages):
                 dist = pkg_resources.get_distribution(name)
                 logger.indent += 2
                 try:
@@ -126,6 +128,9 @@ def print_results(hits, name_column_width=25, terminal_width=None):
                         logger.notify('LATEST:    %s' % latest)
                 finally:
                     logger.indent -= 2
+            elif in_case_insensitive(name, query):
+                latest = highest_version(hit['versions'])
+                logger.notify('  LATEST:    %s (uninstalled)' % latest)
         except UnicodeEncodeError:
             pass
 
